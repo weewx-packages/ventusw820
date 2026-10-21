@@ -47,3 +47,24 @@ License
 > but WITHOUT ANY WARRANTY; without even the implied warranty of
 > MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 > GNU General Public License for more details.
+
+## Independent continuation
+
+This repository retains daduke/ventusw820's full history and the GPL-3.0-or-later
+license stated above. Version 0.2.0 supports Python 3, byte-valued Bluetooth
+commands and the WeeWX user driver directory. It rejects incomplete readings,
+clears stale notifications and closes the Bluetooth connection after each read.
+
+Install bluepy with `python -m pip install bluepy`. Building bluepy on Debian or
+Ubuntu needs a C compiler, pkg-config and GLib development headers. Then install:
+
+```
+weectl extension install https://github.com/weewx-packages/ventusw820/archive/refs/tags/v0.2.0.zip
+weectl station reconfigure --driver=user.ventusw820 --config=/path/to/weewx.conf
+```
+
+Set `mac` and `polling_interval` in `[W820]`. Both `ventus.py` and `ventusw820.py`
+belong in the installation's `bin/user` directory. Run `python -m pytest -q tests`
+for Bluetooth-command, notification and measurement tests. bluepy 1.3.0 builds
+and imports under Python 3.10 and 3.14 in the isolated test environments.
+Pairing, radio notification timing and reconnection need verification on a W820.
