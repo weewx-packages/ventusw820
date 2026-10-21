@@ -22,7 +22,7 @@ import weewx.drivers
 import weewx.wxformulas
 
 DRIVER_NAME = 'W820'
-DRIVER_VERSION = '0.2.0'
+DRIVER_VERSION = '0.2.1'
 
 
 def loader(config_dict, _):

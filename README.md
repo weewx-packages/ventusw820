@@ -51,7 +51,7 @@ License
 ## Independent continuation
 
 This repository retains daduke/ventusw820's full history and the GPL-3.0-or-later
-license stated above. Version 0.2.0 supports Python 3, byte-valued Bluetooth
+license stated above. Version 0.2.1 supports Python 3, byte-valued Bluetooth
 commands and the WeeWX user driver directory. It rejects incomplete readings,
 clears stale notifications and closes the Bluetooth connection after each read.
 
@@ -59,7 +59,7 @@ Install bluepy with `python -m pip install bluepy`. Building bluepy on Debian or
 Ubuntu needs a C compiler, pkg-config and GLib development headers. Then install:
 
 ```
-weectl extension install https://github.com/weewx-packages/ventusw820/archive/refs/tags/v0.2.0.zip
+weectl extension install https://github.com/weewx-packages/ventusw820/archive/refs/tags/v0.2.1.zip
 weectl station reconfigure --driver=user.ventusw820 --config=/path/to/weewx.conf
 ```
 

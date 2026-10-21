@@ -4,6 +4,6 @@ from weecfg.extension import ExtensionInstaller
 
 
 def loader():
-    return ExtensionInstaller(version='0.2.0', name='ventusw820',
+    return ExtensionInstaller(version='0.2.1', name='ventusw820',
         description='Ventus W820 Bluetooth driver', author='Christian Herzog',
         files=[('bin/user', ['ventus.py', 'ventusw820.py'])])
