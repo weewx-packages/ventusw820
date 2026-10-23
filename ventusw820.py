@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # Modified 2026-10-22 by weewx-packages.
+# Modified 2026-10-23 by weewx-packages: remove the unused debug_read option.
 #
 # weewx driver for Ventus W820 weather station
 # (c) 2015 Christian Herzog <daduke@daduke.org>
@@ -31,8 +32,6 @@ def loader(config_dict, _):
 def confeditor_loader():
     return W820ConfEditor()
 
-DEBUG_READ = 0
-
 
 def logmsg(level, msg):
     syslog.syslog(level, 'w820: %s' % msg)
@@ -60,8 +59,6 @@ class W820Driver(weewx.drivers.AbstractDevice):
         self.polling_interval = int(stn_dict.get('polling_interval', 60))
         self._last_rain = None
         loginf('driver version is %s' % DRIVER_VERSION)
-        global DEBUG_READ
-        DEBUG_READ = int(stn_dict.get('debug_read', DEBUG_READ))
         self.station = Station(self.mac)
 
     def closePort(self):

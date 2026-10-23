@@ -58,3 +58,22 @@ def test_ble_failure_disconnects(monkeypatch):
 
 def test_user_driver_configuration():
     assert 'driver = user.ventusw820' in driver.confeditor_loader().default_stanza
+
+
+def test_wind_message_before_temperature_message():
+    temperature = bytearray(15)
+    temperature[0:2] = (1, 2)    # degF
+    wind = bytearray(19)
+    wind[0:2] = (3, 1 << 1)      # mph
+    wind[11:13] = (100).to_bytes(2, 'big')
+    ventus.sensorData.clear()
+    delegate = ventus.w820Delegate('')
+    delegate.handleNotification(0, temperature)
+    delegate.handleNotification(0, wind)
+    expected = ventus.sensorData['windSpeed']
+    ventus.sensorData.clear()
+    delegate = ventus.w820Delegate('')
+    delegate.handleNotification(0, wind)
+    assert 'windSpeed' not in ventus.sensorData
+    delegate.handleNotification(0, temperature)
+    assert ventus.sensorData['windSpeed'] == expected
