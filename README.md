@@ -1,69 +1,106 @@
 # Ventus W820 for WeeWX
 
-Read a Ventus W820 weather station over Bluetooth Low Energy. The driver supplies
-indoor/outdoor temperature and humidity, pressure, wind direction/speed, battery
-status and rain increments. It does not supply gust measurements.
+A WeeWX driver that reads a Ventus W820 weather station over Bluetooth Low
+Energy: indoor and outdoor temperature and humidity, pressure, wind speed and
+direction, rain and the battery flag. It supplies no wind gust.
 
-This is an independent continuation of [daduke/ventusw820](https://github.com/daduke/ventusw820).
-Release 0.2.1 uses Python 3 and installs both Bluetooth support and the driver in
-WeeWX's user directory. It rejects incomplete readings and closes each connection.
+This is an independent continuation of
+[daduke/ventusw820](https://github.com/daduke/ventusw820), ported to Python 3
+and packaged as a WeeWX extension. The original
+[project page](http://daduke.org/coding/ventus.html) has the hardware
+background.
 
-## Install
+## Requirements
 
-An existing WeeWX station is required. Replace `/path/to/weewx.conf`
-with its configuration file before running the commands.
+- A Ventus W820 and a Bluetooth LE adapter that the user running WeeWX can use.
+- [bluepy](https://github.com/IanHarvey/bluepy), installed in the Python
+  environment that runs WeeWX. Bluepy builds a native helper on Linux, which
+  needs a C compiler, `make`, `pkg-config` and the GLib development headers. On
+  Debian and Ubuntu:
 
-Use the Python environment and `weectl` belonging to your WeeWX station. The catalog release requires Python >=3.10 and WeeWX >=5.2,<6.
+  ```sh
+  sudo apt install build-essential pkg-config libglib2.0-dev
+  python -m pip install 'bluepy==1.3.0'
+  ```
 
-Before running the commands, activate the existing virtual environment that
-runs your WeeWX service. Both `python` and `weectl` must come from that
-environment. For an OS-packaged WeeWX installation, use compatible distribution
-packages instead, or migrate WeeWX and its service to a virtual environment
-first. Installing into an unrelated virtual environment will not supply the
-running service with dependencies.
+  Activate that environment first, so that `python` and `weectl` both come from
+  it. For an OS-packaged WeeWX, install a distribution package for bluepy
+  instead.
 
-Bluepy builds a native helper on Linux. Before installing it, install a C
-compiler, `make`, `pkg-config` and GLib development headers. On Debian/Ubuntu,
-the packages are `build-essential`, `pkg-config` and `libglib2.0-dev`.
-Then install the runtime dependency into the activated WeeWX environment:
+## Installation
+
+Install `ventusw820` from the [WeeWX packages catalog](https://github.com/weewx-packages/catalog/blob/main/packages/ventusw820.md).
+The catalog page lists the current release, its WeeWX and Python
+requirements, and the install, update and removal commands.
+
+The package installs `ventus.py`, the Bluetooth library, and `ventusw820.py`,
+the driver, into the station's `bin/user`. Then select the driver, enter the MAC
+address of the W820 when asked, and restart WeeWX:
 
 ```sh
-python -m pip install 'bluepy==1.3.0'
-```
-
-```sh
-weectl extension install https://github.com/weewx-packages/ventusw820/releases/download/v0.2.1/ventusw820-0.2.1.zip --config=/path/to/weewx.conf
 weectl station reconfigure --driver=user.ventusw820 --config=/path/to/weewx.conf
 ```
 
-A downloaded copy of this same archive can be passed instead of the URL.
-These commands work with stock WeeWX 5; no package-manager integration is
-required.
-
-## Connect the station
-
-Enter your W820 Bluetooth MAC address in `weewx.conf`:
+## Configuration
 
 ```ini
 [Station]
     station_type = W820
+
 [W820]
     driver = user.ventusw820
     mac = AA:BB:CC:DD:EE:FF
-    polling_interval = 60
 ```
 
-Restart your WeeWX service after changing the configuration. The service user
-must have access to the Bluetooth adapter. Both `ventus.py` and `ventusw820.py`
-are installed under the station's `bin/user`; do not copy them into Python 2
-libraries or `weewx.drivers`.
+| Option | Default | Meaning |
+|---|---|---|
+| `mac` | none, required | Bluetooth MAC address of the W820. |
+| `polling_interval` | `60` | Seconds to wait after each reading. |
 
-Pairing, notification timing and reception need verification on your W820.
-The decoder's offline checks do not establish radio range or Linux adapter support.
-See the original [project page](http://daduke.org/coding/ventus.html) for hardware background.
+The driver opens a new Bluetooth connection for each reading and closes it
+afterwards. It drops a reading unless indoor and outdoor temperature and
+humidity, pressure, wind speed and direction, the battery flag and the rain
+counter are all present.
 
-License
--------
+The driver reports in `METRIC` units:
+
+| W820 value | WeeWX field |
+|---|---|
+| indoor temperature and humidity | `inTemp`, `inHumidity` |
+| outdoor temperature and humidity | `outTemp`, `outHumidity` |
+| pressure | `barometer` |
+| low battery | `outTempBatteryStatus` |
+| wind speed, wind direction | `windSpeed`, `windDir` |
+| rain counter | `rainTotal`, from which the driver computes `rain` |
+
+`windDir` is empty while the wind speed is zero.
+
+To check the connection without WeeWX, stop WeeWX and run the driver on its own.
+It prints the decoded readings every 60 seconds:
+
+```sh
+PYTHONPATH=/path/to/station/bin python -m user.ventusw820 --mac=AA:BB:CC:DD:EE:FF
+```
+
+## Limitations
+
+- Not tested on W820 hardware by weewx-packages. Pairing, notification timing
+  and reception need checking on your own station.
+- The library also decodes UV index, daily, weekly and monthly rain, and wind
+  chill. The driver does not pass them to WeeWX.
+- The source marks the pressure conversion for a console set to mmHg as wrong.
+- The tests decode synthetic notifications. They say nothing about radio range
+  or support for a particular Bluetooth adapter.
+
+## Development
+
+Run the tests in a Python environment with WeeWX, bluepy and pytest:
+
+```sh
+python -m pytest -q tests
+```
+
+## License
 
 > Ventus W820 bluetooth driver and weewx connector
 >
@@ -79,4 +116,4 @@ License
 > MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 > GNU General Public License for more details.
 
-<!-- Documentation updated 2026-10-23 by weewx-packages. -->
+The full text is in [LICENSE](LICENSE). See also [NOTICE](NOTICE).
