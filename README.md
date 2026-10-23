@@ -10,20 +10,35 @@ WeeWX's user directory. It rejects incomplete readings and closes each connectio
 
 ## Install
 
+An existing WeeWX station is required. Replace `/path/to/weewx.conf`
+with its configuration file before running the commands.
+
 Use the Python environment and `weectl` belonging to your WeeWX station. The catalog release requires Python >=3.10 and WeeWX >=5.2,<6.
 
-Install `bluepy` in the same Python environment with `python -m pip install bluepy`.
-It needs Linux Bluetooth access. Building bluepy on Debian/Ubuntu needs a C compiler,
-`pkg-config` and GLib development headers.
+Before running the commands, activate the existing virtual environment that
+runs your WeeWX service. Both `python` and `weectl` must come from that
+environment. For an OS-packaged WeeWX installation, use compatible distribution
+packages instead, or migrate WeeWX and its service to a virtual environment
+first. Installing into an unrelated virtual environment will not supply the
+running service with dependencies.
+
+Bluepy builds a native helper on Linux. Before installing it, install a C
+compiler, `make`, `pkg-config` and GLib development headers. On Debian/Ubuntu,
+the packages are `build-essential`, `pkg-config` and `libglib2.0-dev`.
+Then install the runtime dependency into the activated WeeWX environment:
+
+```sh
+python -m pip install 'bluepy==1.3.0'
+```
 
 ```sh
 weectl extension install https://github.com/weewx-packages/ventusw820/releases/download/v0.2.1/ventusw820-0.2.1.zip --config=/path/to/weewx.conf
 weectl station reconfigure --driver=user.ventusw820 --config=/path/to/weewx.conf
 ```
 
-Replace `/path/to/weewx.conf` with your station configuration. A downloaded copy
-of this same archive can be passed instead of the URL. These commands work with
-stock WeeWX 5; no package-manager integration is required.
+A downloaded copy of this same archive can be passed instead of the URL.
+These commands work with stock WeeWX 5; no package-manager integration is
+required.
 
 ## Connect the station
 
