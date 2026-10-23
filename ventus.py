@@ -1,4 +1,6 @@
 # Modified 2026-10-22 by weewx-packages.
+# Modified 2026-10-23 by weewx-packages: convert wind speed only once the
+# temperature unit is known.
 import bluepy.btle as btle
 import array
 
@@ -26,6 +28,9 @@ class w820Delegate(btle.DefaultDelegate):
     def __init__(self, hndl):
         btle.DefaultDelegate.__init__(self)
         self.hndl=hndl;
+        # (raw speed, wind unit) of a type 3 message that arrived before the
+        # type 1 message, see setWindSpeed()
+        self.pendingWind = None
 
     def handleNotification(self, cHandle, data):
        #data = data.encode("hex")
@@ -46,6 +51,9 @@ class w820Delegate(btle.DefaultDelegate):
                        sensorData['lowBat'] = 1
                else:
                        sensorData['lowBat'] = 0
+               if self.pendingWind is not None:
+                       self.setWindSpeed(*self.pendingWind)
+                       self.pendingWind = None
         
 
        elif data[0] == 2:
@@ -73,23 +81,34 @@ class w820Delegate(btle.DefaultDelegate):
                sensorData['rainWeekly'] = ( (data[5] * 256) + data[6] ) * rainFactor
                sensorData['rainMonthly'] = ( ((data[7] * 65536) + (data[8] * 256)) + data[9] ) * rainFactor
                sensorData['rainTotal'] = ( ((data[15] * 65536) + (data[16] * 256)) + data[17] ) * rainFactor
-               sensorData['windSpeed'] = (data[11] * 256) + data[12]
                sensorData['windChill'] = ((data[13] * 256) + data[14])/10.0
                sensorData['windDirection'] = data[10]
-               if windUnit == 0:
-                       sensorData['windSpeed'] *= 0.1
-               if windUnit == 1:
-                       sensorData['windSpeed'] = sensorData['windSpeed'] * 0.1 * 1.60934
-                       if sensorData['degF'] == 0:      # bug in W820: wind speeds not in km/h depend on temperature unit!!!
-                               sensorData['windSpeed'] *= 0.01313868613138686131
-               elif windUnit == 2:
-                       sensorData['windSpeed'] = sensorData['windSpeed'] * 0.1 * 3.6
-                       if sensorData['degF'] == 0:      # bug in W820: wind speeds not in km/h depend on temperature unit!!!
-                               sensorData['windSpeed'] *= 0.01157742402315484804
-               elif windUnit == 3:
-                       sensorData['windSpeed'] = sensorData['windSpeed'] * 0.1 * 1.85199539525386
-                       if sensorData['degF'] == 0:      # bug in W820: wind speeds not in km/h depend on temperature unit!!!
-                               sensorData['windSpeed'] *= 0.03782505910165484633
+               windSpeed = (data[11] * 256) + data[12]
+               if windUnit in (1, 2, 3) and 'degF' not in sensorData:
+                       self.pendingWind = (windSpeed, windUnit)
+               else:
+                       self.setWindSpeed(windSpeed, windUnit)
+
+    def setWindSpeed(self, windSpeed, windUnit):
+       # In mph, m/s and knots the W820 scales the speed differently depending
+       # on its temperature unit, which only message type 1 carries. Nothing in
+       # read() makes type 1 arrive before type 3, so a type 3 message that comes
+       # first is held in pendingWind until type 1 has set sensorData['degF'].
+       sensorData['windSpeed'] = windSpeed
+       if windUnit == 0:
+               sensorData['windSpeed'] *= 0.1
+       if windUnit == 1:
+               sensorData['windSpeed'] = sensorData['windSpeed'] * 0.1 * 1.60934
+               if sensorData['degF'] == 0:      # bug in W820: wind speeds not in km/h depend on temperature unit!!!
+                       sensorData['windSpeed'] *= 0.01313868613138686131
+       elif windUnit == 2:
+               sensorData['windSpeed'] = sensorData['windSpeed'] * 0.1 * 3.6
+               if sensorData['degF'] == 0:      # bug in W820: wind speeds not in km/h depend on temperature unit!!!
+                       sensorData['windSpeed'] *= 0.01157742402315484804
+       elif windUnit == 3:
+               sensorData['windSpeed'] = sensorData['windSpeed'] * 0.1 * 1.85199539525386
+               if sensorData['degF'] == 0:      # bug in W820: wind speeds not in km/h depend on temperature unit!!!
+                       sensorData['windSpeed'] *= 0.03782505910165484633
         
 def connect(mac):
     return btle.Peripheral(mac, 'random')
