@@ -1,0 +1,16 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: weewx-packages/catalog/.github/workflows/package-tests.yml@main
+    with:
+      pip-packages: 'bluepy==1.3.0'
+      system-packages: 'libglib2.0-dev pkg-config make gcc'
