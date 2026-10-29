@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   tests:
-    uses: weewx-packages/catalog/.github/workflows/package-tests.yml@ci/package-tests-system-packages
+    uses: weewx-packages/catalog/.github/workflows/package-tests.yml@main
     with:
       pip-packages: 'bluepy==1.3.0'
       system-packages: 'libglib2.0-dev pkg-config make gcc'
